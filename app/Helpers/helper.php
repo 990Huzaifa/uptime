@@ -263,8 +263,8 @@ function myMailSend($to, $name, $subject, $message, $link = null, $data = null){
         "message" => $message,
         "link"    => $link,
         "data"    => $data,
-        "logo"    => 'https://downnotify.techvince.com/assets/images/logo.png',
-        "from"    => 'DownLink',
+        "logo"    => 'https://uptime.techvince.com/assets/images/logo.png',
+        "from"    => 'Uptime Monitor',
     ];
 
     // Send using Guzzle HTTP client
