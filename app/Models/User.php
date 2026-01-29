@@ -25,7 +25,7 @@ class User extends Authenticatable
         'email_verified_at',
         'password',
         'plan',
-        'fcm_id',
+        'fcm_token',
         'app_version',
         'device_id',
         'google_id',

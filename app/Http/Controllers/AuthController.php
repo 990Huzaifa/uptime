@@ -31,7 +31,7 @@ class AuthController extends Controller
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required',
                 'device_id' => 'required',
-                'fcm_id' => 'required',
+                'fcm_token' => 'required',
                 'app_version' => 'required|string',
             ], [
                 'name.required' => 'Name is required',
@@ -40,7 +40,7 @@ class AuthController extends Controller
                 'email.unique' => 'Email already exists',
                 'password.required' => 'Password is required',
                 'device_id.required' => 'Device ID is required',
-                'fcm_id.required' => 'FCM Token is required',
+                'fcm_token.required' => 'FCM Token is required',
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -53,7 +53,7 @@ class AuthController extends Controller
                 'password' => Hash::make($request->password),
                 'status' => 'active',
                 'device_id' => $request->device_id,
-                'fcm_id' => $request->fcm_id,
+                'fcm_token' => $request->fcm_token,
                 'remember_token' => $token,
             ]);
 
@@ -91,7 +91,7 @@ class AuthController extends Controller
                 'apple_id' => 'required_if:provider,apple',
                 'facebook_id' => 'required_if:provider,facebook',
                 'app_version' => 'required|string',
-                'fcm_id' => 'required|string',
+                'fcm_token' => 'required|string',
             ]);
             if($validator->fails()) throw new Exception($validator->errors()->first(),422);
 
@@ -120,7 +120,7 @@ class AuthController extends Controller
                     'google_id' => $request->google_id ?? null,
                     'apple_id' => $request->apple_id ?? null,
                     'facebook_id' => $request->facebook_id ?? null,
-                    'fcm_id' => $request->fcm_id,
+                    'fcm_token' => $request->fcm_token,
                     'ip' => $request->ip(),
                     'app_version' => $request->app_version,
                     'device_id' => $request->device_id,
@@ -135,7 +135,7 @@ class AuthController extends Controller
                 'apple_id' => $request->apple_id ?? null,
                 'facebook_id' => $request->facebook_id ?? null,
                 'last_login_at' => now(),
-                'fcm_id' => $request->fcm_id,
+                'fcm_token' => $request->fcm_token,
                 'ip' => $request->ip(),
                 'app_version' => $request->app_version,
                 'device_id' => $request->device_id,
@@ -174,7 +174,7 @@ class AuthController extends Controller
             // delete and create new token and set up last login at
             $user->tokens()->delete();
             $token = $user->createToken('auth_token')->plainTextToken;
-            $user->update(['last_login_at' => now(),'fcm_id' => $request->fcm_id, 'ip' => $request->ip(),'app_version' => $request->app_version,'device_id' => $request->device_id,]);
+            $user->update(['last_login_at' => now(),'fcm_token' => $request->fcm_token, 'ip' => $request->ip(),'app_version' => $request->app_version,'device_id' => $request->device_id,]);
 
             return response()->json(['token' => $token,'user' => $user], 200);
 
@@ -238,7 +238,7 @@ class AuthController extends Controller
             $token = $user->createToken('auth_token')->plainTextToken; 
 
             $user->update([
-                'fcm_id' => $request->fcm_id,
+                'fcm_token' => $request->fcm_token,
                 'ip' => $request->ip(),
                 'app_version' => $request->app_version,
                 'last_login_at' => now(),

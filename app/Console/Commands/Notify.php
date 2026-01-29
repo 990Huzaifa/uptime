@@ -68,14 +68,14 @@ class Notify extends Command
                 ];
                 // send notification logic here
                 if($metrics['status'] == 'down') {
-                    if($user->fcm_id != null) {
+                    if($user->fcm_token != null) {
                         $notification = Notification::create([
                             'user_id' => $user->id,
                             'title' => "Site Down Alert",
                             'message' => "The site {$Site->url} is down.",
                             'data' => json_encode($data)
                         ]);
-                        $service->sendToDevice($user->fcm_id, "Site Down Alert", "The site {$Site->url} is down.", ['site_link_id' => $Site->id, 'status' => 'down'] );
+                        $service->sendToDevice($user->fcm_token, "Site Down Alert", "The site {$Site->url} is down.", ['site_link_id' => $Site->id, 'status' => 'down'] );
                     }
                     if($Site->notify_email) {
                         myMailSend(
@@ -93,7 +93,7 @@ class Notify extends Command
                     
                 }else{
 
-                    if($user->fcm_id != null) {
+                    if($user->fcm_token != null) {
 
                         $notification = Notification::create([
                             'user_id' => $user->id,
@@ -102,7 +102,7 @@ class Notify extends Command
                             'data' => json_encode($data)
                         ]);
 
-                        $service->sendToDevice($user->fcm_id, "Site Up Alert", "The site {$Site->url} is up.", [
+                        $service->sendToDevice($user->fcm_token, "Site Up Alert", "The site {$Site->url} is up.", [
                             'site_link_id' => $Site->id,
                             'status' => 'up',
                         ]);

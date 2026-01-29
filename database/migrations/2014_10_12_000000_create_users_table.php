@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->enum('plan',['Basic','Standard','Premium'])->default('Basic');
             $table->bigInteger('otp')->nullable();
-            $table->string('fcm_id')->nullable();
+            $table->string('fcm_token')->nullable();
             $table->string('device_id')->nullable();
             $table->string('app_version')->nullable();
             $table->string('google_id')->nullable();
