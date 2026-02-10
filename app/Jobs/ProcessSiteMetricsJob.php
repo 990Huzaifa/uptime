@@ -77,6 +77,22 @@ class ProcessSiteMetricsJob implements ShouldQueue
                 ]
             );
 
+            // send notification logic here
+            if($metrics['status'] == 'down') {
+                broadcast(new NotifyUser("Site Down Alert", $siteLink->user_id, [
+                    'site_link_id' => $this->siteLinkId,
+                    'status' => 'down'
+                ]));
+                
+            }else{
+                
+                broadcast(new NotifyUser("Site Up Alert", $siteLink->user_id, [
+                    'site_link_id' => $siteLink->id,
+                    'status' => 'up'
+                ]));
+                
+            }
+
         } catch (Throwable $e) {
             Log::error('ProcessSiteMetricsJob failed', [
                 'site_link_id' => $this->siteLinkId,
