@@ -37,12 +37,7 @@ return [
             'app_id' => env('PUSHER_APP_ID'),
             'options' => [
                 'cluster' => env('PUSHER_APP_CLUSTER'),
-                'encrypted' => true,
-                'debug' => true,
                 'useTLS' => true,
-                'port' => env('PUSHER_PORT', 443),
-                'scheme' => env('PUSHER_SCHEME', 'https'),
-                'authEndpoint' => 'https://uptime.techvince.com/api/broadcasting/auth',
             ],
         ],
 
