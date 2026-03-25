@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
-use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,5 +14,6 @@ use App\Models\User;
 */
 
 Broadcast::channel('user.{userId}', function ($user, $userId) {
+    \Log::info('User:', [$user]);
     return (int) $user->id === (int) $userId;
 });
