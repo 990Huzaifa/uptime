@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\NotifyUser;
 use App\Models\SiteLink;
 use App\Models\SiteCheck;
 use App\Services\GooglePageSpeedService;

@@ -63,11 +63,11 @@ class AuthController extends Controller
             //     'is_url' => false
             // ]));
 
-            $brevo = new BrevoService();
-            $htmlContent = "<html><body><p>Hi " . $data->name . ",</p><p>This is your account verification code: <strong>" . $token . "</strong></p></body></html>";
-            $res = $brevo->sendMail('Account Verification Code', $data->email, $data->name, $htmlContent);
+            // $brevo = new BrevoService();
+            // $htmlContent = "<html><body><p>Hi " . $data->name . ",</p><p>This is your account verification code: <strong>" . $token . "</strong></p></body></html>";
+            // $res = $brevo->sendMail('Account Verification Code', $data->email, $data->name, $htmlContent);
 
-            Log::info('Brevo sendMail response: ' . print_r($res, true));
+            // Log::info('Brevo sendMail response: ' . print_r($res, true));
             DB::commit();
             return response()->json(['message' => 'Your account has been created successfully'], 200);
         } catch (QueryException $e) {
