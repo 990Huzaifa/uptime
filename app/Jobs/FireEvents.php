@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\NotificationList;
 use App\Events\ProfileInfo;
 use App\Events\SubscriptionPlan;
 use Illuminate\Bus\Queueable;
@@ -35,7 +36,7 @@ class FireEvents implements ShouldQueue
         // Trigger the events
         // broadcast(new SiteLinkList($this->userId));
         broadcast(new SubscriptionPlan($this->userId));
-        // broadcast(new NotificationList($this->userId));
+        broadcast(new NotificationList($this->userId));
         broadcast(new ProfileInfo($this->userId));
     }
 }
