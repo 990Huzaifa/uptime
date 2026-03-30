@@ -35,7 +35,13 @@ function probe(string $url, int $durationSeconds = 60, int $timeout = 60)
                 ->get($url);
         } catch (\Exception $e) {
             // Agar URL hi invalid ya network issue hai
-            return false;
+            return [
+                'status' => 'down',
+                'response_time_ms' => null,
+                'ssl_days_left' => null,
+                'html_bytes' => 0,
+                'assets_bytes' => 0,
+            ];
         }
 
             // new retrive
