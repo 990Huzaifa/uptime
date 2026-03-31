@@ -76,7 +76,6 @@ class Notify extends Command
                             'message' => "The site {$Site->url} is down.",
                             'data' => json_encode($data)
                         ]);
-                        Log::info('Notification Data: '. $notification);
                         $service->sendToDevice($user->fcm_token, "Site Down Alert", "The site {$Site->url} is down.", ['site_link_id' => $Site->id, 'status' => 'down'] );
                     }
                     if($Site->notify_email) {
