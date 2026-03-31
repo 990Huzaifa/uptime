@@ -69,7 +69,7 @@ class SiteLinkController extends Controller
             $total = $result->total();
             $upCount = $result->getCollection()->where('status', 'up')->count();
             $upPercentage = $total > 0 ? round(($upCount / $total) * 100, 2) : 0;
-            return response()->json(['data' => $result, 'percentage' => $upPercentage], 200);
+            return response()->json(['data' => $result, 'percentage' => 20], 200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 422);
