@@ -65,8 +65,11 @@ class SiteLinkController extends Controller
                 }
                 return $item;
             });
-
-            return response()->json($result, 200);
+            // calculater the percentage of up and down status and get total overall percentage
+            $total = $result->total();
+            $upCount = $result->getCollection()->where('status', 'up')->count();
+            $upPercentage = $total > 0 ? round(($upCount / $total) * 100, 2) : 0;
+            return response()->json(['data' => $result, 'percentage' => $upPercentage], 200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 422);
