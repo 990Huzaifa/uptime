@@ -196,7 +196,7 @@ class PaymentController extends Controller
 
         // 2. Google Play Developer API ka Endpoint URL
         $url = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{$packageName}/purchases/subscriptions/{$parent_id}/tokens/{$token}";
-
+        Log::info("Google Verification URL: " . $url);
         try {
             // 3. GET Request bhejhe Access Token header ke saath
             $response = Http::withHeaders([
