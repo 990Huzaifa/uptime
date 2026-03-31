@@ -83,12 +83,12 @@ class ProcessGoogleNotification implements ShouldQueue
         $orderId = $data['orderId'] ?? 'N/A';
         $orderDetails = $this->getOrderDetails($orderId);
         $productId = $orderDetails['lineItems'][0]['subscriptionDetails']['basePlanId'] ?? null;
-        Log::info("RTDN Job: Subscription event received.", [
-            'type_code' => $type,
-            'orderId' => $orderId,
-            'basePlanId' => $productId,
-            'data'=> $data
-        ]);
+        // Log::info("RTDN Job: Subscription event received.", [
+        //     'type_code' => $type,
+        //     'orderId' => $orderId,
+        //     'basePlanId' => $productId,
+        //     'data'=> $data
+        // ]);
 
         $filterData = [
             "start"=> $data['startTimeMillis'],

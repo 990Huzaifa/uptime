@@ -257,7 +257,7 @@ class PaymentController extends Controller
             $purchaseToken = $request->input('token');
             $verificationData = $this->verifyFromGoogle($purchaseToken, $parentId);
             if(!$verificationData) return response()->json(['error' => 'Invalid Purchase'], 400);
-            Log::info('Google Verification Data: ' . json_encode($verificationData));
+            // Log::info('Google Verification Data: ' . json_encode($verificationData));
             $account_id = $verificationData['obfuscatedExternalAccountId']  ?? $user->id;
             $filterData = [
                 "start"=> $verificationData['startTimeMillis'],
