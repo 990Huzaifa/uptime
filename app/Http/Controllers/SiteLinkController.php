@@ -337,61 +337,21 @@ class SiteLinkController extends Controller
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             ];
 
-            try {
-                $response = Http::withHeaders($headers)
-                    ->timeout($timeout)
-                    ->retry(2, 1000) // 2 retries, 1 sec delay
-                    ->get($url);
+            $ch = curl_init($url);
 
-                $statusCode = $response->status();
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => $timeout,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_USERAGENT => $headers['User-Agent'],
+            ]);
 
-                return ($statusCode >= 200 && $statusCode < 400);
+            curl_exec($ch);
+            $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-            } catch (ConnectionException $e) {
-                Log::warning("GET failed: " . $e->getMessage());
-            } catch (\Exception $e) {
-                Log::warning("GET exception: " . $e->getMessage());
-            }
-
-            // 🔁 Step 2: Try HEAD request
-            try {
-                $response = Http::withHeaders($headers)
-                    ->timeout($timeout)
-                    ->retry(2, 1000)
-                    ->head($url);
-
-                $statusCode = $response->status();
-
-                return ($statusCode >= 200 && $statusCode < 400);
-
-            } catch (\Exception $e) {
-                Log::warning("HEAD failed: " . $e->getMessage());
-            }
-
-            // 🔁 Step 3: CURL fallback (last resort 💪)
-            try {
-                $ch = curl_init($url);
-
-                curl_setopt_array($ch, [
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_TIMEOUT => $timeout,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_SSL_VERIFYPEER => false,
-                    CURLOPT_USERAGENT => $headers['User-Agent'],
-                ]);
-
-                curl_exec($ch);
-                $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                curl_close($ch);
-
-                return ($statusCode >= 200 && $statusCode < 400);
-
-            } catch (\Exception $e) {
-                Log::error("CURL failed: " . $e->getMessage());
-            }
-
-
-
+            return ($statusCode >= 200 && $statusCode < 400);
 
 
         } catch (ConnectionException $e) {

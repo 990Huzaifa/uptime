@@ -13,109 +13,118 @@ function probe(string $url, int $durationSeconds = 60, int $timeout = 60)
         'total_ms'  => null,
     ];
 
-    $response = null;
+    $statusCode   = null;
+    $finalUrl     = $url;
+    $contentType  = null;
+    $encoding     = null;
+    $html         = '';
 
-    // Request + timings
-        try {
-            $response = Http::withHeaders([
-                    'User-Agent' => 'DownLinkNotifyer/1.0 (+https://downlink.techvince.com)'
-                ])
-                ->timeout($timeout)
-                ->withOptions([
-                    'allow_redirects' => true,
-                    'on_stats' => function (\GuzzleHttp\TransferStats $stats) use (&$timings) {
-                        $handler = $stats->getHandlerStats(); // cURL stats
-                        // TTFB: namelookup + connect + appconnect + pretransfer + starttransfer
-                        if (isset($handler['starttransfer_time'])) {
-                            $timings['ttfb_ms']  = (int) round($handler['starttransfer_time'] * 1000);
-                        }
-                        $timings['total_ms'] = (int) round($stats->getTransferTime() * 1000);
-                    },
-                ])
-                ->get($url);
-        } catch (\Exception $e) {
-            // Agar URL hi invalid ya network issue hai
-            return [
-                'status' => 'down',
-                'response_time_ms' => null,
-                'ssl_days_left' => null,
-                'html_bytes' => 0,
-                'assets_bytes' => 0,
-            ];
+    try {
+        $ch = curl_init($url);
+
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+            CURLOPT_HTTPHEADER => [
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            ],
+            CURLOPT_HEADER => true, // 🔥 important (headers + body)
+        ]);
+
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            throw new \Exception(curl_error($ch));
         }
 
-            // new retrive
-                // $psi_api_url = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
-                // $psi_response = Http::get($psi_api_url, [
-                //     'url'      => $url, // User ka URL
-                //     'strategy' => 'desktop', // Ya 'mobile'
-                //     // Aapko API key ki zaroorat nahi hai, agar requests limited ho
-                // ]);
-                // $performanceScore = null;
-                // $seoScore = null;
-                // $lcp = null;
-                // if ($psi_response->successful()) {
-                //     $data = $psi_response->json();
+        $info = curl_getinfo($ch);
 
-                //     // Data nikalna
-                //     $performanceScore = $data['lighthouseResult']['categories']['performance']['score'] * 100;
-                //     $seoScore = $data['lighthouseResult']['categories']['seo']['score'] * 100;
-                    
-                //     // Core Web Vitals
-                //     $lcp = $data['lighthouseResult']['audits']['largest-contentful-paint']['displayValue'];
+        // 🔥 Extract data
+        $statusCode  = $info['http_code'] ?? null;
+        $headerSize  = $info['header_size'] ?? 0;
+        $finalUrl    = $info['url'] ?? $url;
 
-                //     // ... baaqi sab metrics bhi yahan se mil jaengi.
-                // }
-            // new retrive end
+        $headersRaw = substr($response, 0, $headerSize);
+        $body       = substr($response, $headerSize);
 
+        // Parse headers
+        foreach (explode("\r\n", $headersRaw) as $headerLine) {
+            if (stripos($headerLine, 'Content-Type:') === 0) {
+                $contentType = trim(explode(':', $headerLine, 2)[1]);
+            }
+            if (stripos($headerLine, 'Content-Encoding:') === 0) {
+                $encoding = trim(explode(':', $headerLine, 2)[1]);
+            }
+        }
 
+        // Timings
+        if (isset($info['starttransfer_time'])) {
+            $timings['ttfb_ms'] = (int) round($info['starttransfer_time'] * 1000);
+        }
 
+        if (isset($info['total_time'])) {
+            $timings['total_ms'] = (int) round($info['total_time'] * 1000);
+        }
 
+        // Only HTML content
+        if ($contentType && str_contains($contentType, 'text/html')) {
+            $html = $body;
+        }
 
-    $statusCode   = $response->status();
-    $isUp         = ($statusCode >= 200 && $statusCode < 400);
-    $finalUrl     = (string) ($response->effectiveUri() ?? $url);
-    $contentType  = $response->header('content-type');
-    $encoding     = $response->header('content-encoding');
-    $html         = (Str::startsWith($contentType, 'text/html')) ? $response->body() : '';
-    $htmlBytes    = strlen($html);
+        curl_close($ch);
 
-    // Approx total asset weight (HEAD on top assets, max 15)
+    } catch (\Exception $e) {
+        return [
+            'status' => 'down',
+            'response_time_ms' => null,
+            'ssl_days_left' => null,
+            'html_bytes' => 0,
+            'assets_bytes' => 0,
+        ];
+    }
+
+    // 🔍 Same logic as before (UNCHANGED)
+    $isUp      = ($statusCode >= 200 && $statusCode < 400);
+    $htmlBytes = strlen($html);
+
+    // Assets
     [$assetBytes, $topAssets] = estimateAssetsWeight($finalUrl, $html, 15, $timeout);
 
-    // SSL info (only for https)
+    // SSL
     $sslDaysLeft = null;
-    if (Str::startsWith($finalUrl, 'https://')) {
+    if (str_starts_with($finalUrl, 'https://')) {
         $sslDaysLeft = getSslDaysLeft(parse_url($finalUrl, PHP_URL_HOST));
     }
 
-    $now = Carbon::now('UTC');
+    $now = \Carbon\Carbon::now('UTC');
     $nextCheckAt = $now->copy()->addSeconds($durationSeconds);
 
     return [
-        // Status block
+        // Status
         'status'        => $isUp ? 'up' : 'down',
         'status_code'   => $statusCode ?? null,
-        'last_checked_at' => $now->toDateTimeString()  ?? null,
-        'next_check_at' => $nextCheckAt->toDateTimeString() ?? null,
+        'last_checked_at' => $now->toDateTimeString(),
+        'next_check_at' => $nextCheckAt->toDateTimeString(),
 
         // Speed
         'response_time_ms' => $timings['total_ms'] ?? null,
         'ttfb_ms'          => $timings['ttfb_ms']  ?? null,
 
-        // Page size
-        'html_bytes'       => $htmlBytes ?? 0,
-        'assets_bytes'     => $assetBytes ?? 0,
-        'top_assets'       => $topAssets ?? [], // [{url, bytes}] (where available)
+        // Size
+        'html_bytes'   => $htmlBytes ?? 0,
+        'assets_bytes' => $assetBytes ?? 0,
+        'top_assets'   => $topAssets ?? [],
 
         // Security
-        'ssl_days_left'    => $sslDaysLeft ?? null,
+        'ssl_days_left' => $sslDaysLeft ?? null,
 
-        // Raw extras
+        // Extras
         'final_url'        => $finalUrl ?? '',
         'content_type'     => $contentType ?? '',
         'content_encoding' => $encoding ?? '',
-
     ];
 }
 
