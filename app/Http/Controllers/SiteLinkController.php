@@ -330,7 +330,10 @@ class SiteLinkController extends Controller
     {
 
         try {
-            $response = Http::timeout($timeout)->get($url);
+            $response = Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            ])->timeout($timeout)->get($url);
             $statusCode = $response->status();
             return ($statusCode >= 200 && $statusCode < 400);
         } catch (ConnectionException $e) {
