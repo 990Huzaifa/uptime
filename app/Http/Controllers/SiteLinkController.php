@@ -23,22 +23,22 @@ class SiteLinkController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
 
             $title = $request->input('title', '');
             $status = $request->input('status', '');
             $duration = $request->input('duration', ''); //no of days
-            $tzcode   = $request->input('tzcode', 'UTC');
-            
-            $query = SiteLink::select('site_links.*', 'site_checks.*','site_links.id as id')
-            ->where('site_links.user_id', $user->id)
-            ->join('site_checks', 'site_checks.site_link_id', '=', 'site_links.id')
-            ->orderBy('site_links.created_at', 'desc');
+            $tzcode = $request->input('tzcode', 'UTC');
+
+            $query = SiteLink::select('site_links.*', 'site_checks.*', 'site_links.id as id')
+                ->where('site_links.user_id', $user->id)
+                ->join('site_checks', 'site_checks.site_link_id', '=', 'site_links.id')
+                ->orderBy('site_links.created_at', 'desc');
 
             if ($title) {
                 $query->where('site_links.title', 'like', '%' . $title . '%');
-            }         
+            }
 
             if ($duration) {
                 // here we filter records based on duration in days created_at
@@ -71,28 +71,28 @@ class SiteLinkController extends Controller
             $upPercentage = $total > 0 ? round(($upCount / $total) * 100, 2) : 0;
             return response()->json(['data' => $result, 'percentage' => $upPercentage], 200);
 
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 422);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
 
     public function show($id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
 
-            $data = SiteLink::select('site_links.*','site_checks.*')
-            ->join('site_checks', 'site_checks.site_link_id', '=', 'site_links.id')
-            ->where('site_links.id', $id)
-            ->orderBy('site_checks.checked_at', 'desc')
-            ->first();
+            $data = SiteLink::select('site_links.*', 'site_checks.*')
+                ->join('site_checks', 'site_checks.site_link_id', '=', 'site_links.id')
+                ->where('site_links.id', $id)
+                ->orderBy('site_checks.checked_at', 'desc')
+                ->first();
 
             return response()->json($data, 200);
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 422);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
@@ -120,7 +120,7 @@ class SiteLinkController extends Controller
                     'notify_sms' => 'required|boolean',
                     'notify_push' => 'required|boolean',
                 ],
-                [                    
+                [
                     'title.required' => 'Title is required.',
                     'title.string' => 'Title must be a string.',
                     'title.max' => 'Title may not be greater than 255 characters.',
@@ -140,7 +140,7 @@ class SiteLinkController extends Controller
                 ->first();
 
             if ($siteCheck) {
-                if($siteCheck->is_disabled){
+                if ($siteCheck->is_disabled) {
                     throw new Exception('You have previously disabled monitoring for this URL. Please enable it instead of adding again.', 400);
                 }
                 throw new Exception('You are already monitoring this URL.', 400);
@@ -153,7 +153,7 @@ class SiteLinkController extends Controller
             DB::beginTransaction();
             // here we hit the url to test that site is working or not by their status code
             // if status code is 200 then site is working otherwise down
-            $check =$this->isValidAndAccessible($request->url);
+            $check = $this->isValidAndAccessible($request->url);
             // if(!$check)throw new Exception('Site is Invalid', 400);
 
 
@@ -166,7 +166,7 @@ class SiteLinkController extends Controller
                 'user_id' => $user->id,
                 'title' => $request->title,
                 'url' => $request->url,
-                'duration' => $request->duration, 
+                'duration' => $request->duration,
                 'notify_email' => $request->notify_email,
                 'notify_sms' => $request->notify_sms,
                 'notify_push' => $request->notify_push,
@@ -176,9 +176,9 @@ class SiteLinkController extends Controller
                 'site_link_id' => $data->id,
                 'status' => $check ? 'up' : 'down',
                 'response_time_ms' => null,
-                'ssl_days_left'    => null,
-                'html_bytes'       => null,
-                'assets_bytes'       => null,
+                'ssl_days_left' => null,
+                'html_bytes' => null,
+                'assets_bytes' => null,
                 'checked_at' => now(),
                 'scores' => null,
             ]);
@@ -198,12 +198,13 @@ class SiteLinkController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
 
             DB::beginTransaction();
             $data = SiteLink::find($id);
-            if (!$data) throw new Exception('Site not found', 404);
+            if (!$data)
+                throw new Exception('Site not found', 404);
 
             $data->delete();
             // $info = SiteCheck::where('site_link_id',$id)->first();
@@ -211,13 +212,13 @@ class SiteLinkController extends Controller
             DB::commit();
             return response()->json(['message' => 'Site deleted successfully'], 200);
 
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 422);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
-        }   
+        }
     }
 
     public function update(Request $request, $id): JsonResponse
@@ -235,7 +236,7 @@ class SiteLinkController extends Controller
                     'notify_sms' => 'required|boolean',
                     'notify_push' => 'required|boolean',
                 ],
-                [                    
+                [
                     'title.required' => 'Title is required.',
                     'title.string' => 'Title must be a string.',
                     'title.max' => 'Title may not be greater than 255 characters.',
@@ -257,7 +258,8 @@ class SiteLinkController extends Controller
             DB::beginTransaction();
 
             $data = SiteLink::findOrFail($id);
-            if (!$data) throw new Exception('Record not found', 404);
+            if (!$data)
+                throw new Exception('Record not found', 404);
 
             $data->update([
                 'user_id' => $user->id,
@@ -291,7 +293,7 @@ class SiteLinkController extends Controller
                 [
                     'is_active' => 'required|in:active,inactive',
                 ],
-                [                    
+                [
                     'is_active.required' => 'Status is required.',
                     'is_active.in' => 'Invalid status selected.',
                 ]
@@ -330,12 +332,68 @@ class SiteLinkController extends Controller
     {
 
         try {
-            $response = Http::withHeaders([
+            $headers = [
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            ])->timeout($timeout)->get($url);
-            $statusCode = $response->status();
-            return ($statusCode >= 200 && $statusCode < 400);
+            ];
+
+            try {
+                $response = Http::withHeaders($headers)
+                    ->timeout($timeout)
+                    ->retry(2, 1000) // 2 retries, 1 sec delay
+                    ->get($url);
+
+                $statusCode = $response->status();
+
+                return ($statusCode >= 200 && $statusCode < 400);
+
+            } catch (ConnectionException $e) {
+                Log::warning("GET failed: " . $e->getMessage());
+            } catch (\Exception $e) {
+                Log::warning("GET exception: " . $e->getMessage());
+            }
+
+            // 🔁 Step 2: Try HEAD request
+            try {
+                $response = Http::withHeaders($headers)
+                    ->timeout($timeout)
+                    ->retry(2, 1000)
+                    ->head($url);
+
+                $statusCode = $response->status();
+
+                return ($statusCode >= 200 && $statusCode < 400);
+
+            } catch (\Exception $e) {
+                Log::warning("HEAD failed: " . $e->getMessage());
+            }
+
+            // 🔁 Step 3: CURL fallback (last resort 💪)
+            try {
+                $ch = curl_init($url);
+
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => $timeout,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_USERAGENT => $headers['User-Agent'],
+                ]);
+
+                curl_exec($ch);
+                $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                return ($statusCode >= 200 && $statusCode < 400);
+
+            } catch (\Exception $e) {
+                Log::error("CURL failed: " . $e->getMessage());
+            }
+
+
+
+
+
         } catch (ConnectionException $e) {
             Log::error("ConnectionException: " . $e->getMessage());
             return false;
@@ -357,7 +415,7 @@ class SiteLinkController extends Controller
             $data->update([
                 'is_notify' => !$data->is_notify,
             ]);
-            
+
             DB::commit();
             $message = $data->is_notify ? 'Notifications enabled' : 'Notifications disabled';
             return response()->json($message, 200);
@@ -390,7 +448,7 @@ class SiteLinkController extends Controller
             $data->update([
                 'is_disabled' => false,
             ]);
-            
+
             DB::commit();
             return response()->json('Link enabled successfully', 200);
         } catch (QueryException $e) {
@@ -421,7 +479,7 @@ class SiteLinkController extends Controller
             $data->update([
                 'is_disabled' => false,
             ]);
-            
+
             DB::commit();
             return response()->json('Link enabled successfully', 200);
         } catch (QueryException $e) {
