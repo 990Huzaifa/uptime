@@ -35,7 +35,19 @@ function probe(string $url, int $durationSeconds = 60, int $timeout = 60)
             CURLOPT_HTTPHEADER => [
                 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             ],
-            CURLOPT_HEADER => true, // 🔥 important (headers + body)
+            CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$contentType, &$encoding) {
+                $len = strlen($header);
+
+                if (stripos($header, 'Content-Type:') === 0) {
+                    $contentType = trim(substr($header, 13));
+                }
+
+                if (stripos($header, 'Content-Encoding:') === 0) {
+                    $encoding = trim(substr($header, 17));
+                }
+
+                return $len;
+            },
         ]);
 
         $response = curl_exec($ch);
