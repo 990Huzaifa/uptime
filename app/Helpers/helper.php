@@ -27,6 +27,10 @@ function probe(string $url, int $durationSeconds = 60, int $timeout = 60)
             CURLOPT_TIMEOUT => $timeout,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_ENCODING => '', // gzip/deflate support
+            CURLOPT_AUTOREFERER => true,
+            CURLOPT_REFERER => $url,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
             CURLOPT_HTTPHEADER => [
                 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
